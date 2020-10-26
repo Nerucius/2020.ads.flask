@@ -2,7 +2,7 @@ from flask_script import Manager
 from flaskapp.app import app
 
 manager = Manager(app)
-app.config['DEBUG'] = True # Ensure debugger will load.
+app.config["DEBUG"] = True  # Ensure debugger will load.
 
-if __name__ == '__main__':
-  manager.run()
+if __name__ == "__main__":
+    manager.run()
