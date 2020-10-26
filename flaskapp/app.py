@@ -1,4 +1,5 @@
-import json
+import json, bson
+from bson.objectid import ObjectId
 
 from flask import request, url_for, abort, jsonify, redirect, render_template
 from bson.objectid import ObjectId
@@ -9,12 +10,15 @@ from flaskapp.forms import ProductForm
 
 @app.route("/")
 def index():
-    return render_template("index.html")
+    return redirect(url_for("products_list"))
 
 
 @app.route("/products/")
 def products_list():
-    return "Listing of all products we have."
+    """Provide HTML listing of all Products."""
+    # Query: Get all Products objects, sorted by date.
+    products = mongo.db.products.find()[:]
+    return render_template("product/index.html", products=products)
 
 
 @app.route("/products/<product_id>/")
@@ -22,7 +26,6 @@ def product_detail(product_id):
     """Provide HTML page with a given product."""
     # Query: get Product object by ID.
     product = mongo.db.products.find_one({"_id": ObjectId(product_id)})
-    print(product)
     if product is None:
         # Abort with Not Found.
         abort(404)
@@ -48,7 +51,24 @@ def product_create():
 
 @app.route("/products/<product_id>/delete/", methods=["DELETE"])
 def product_delete(product_id):
-    raise NotImplementedError("DELETE")
+    """Delete record using HTTP DELETE, respond with JSON."""
+    result = mongo.db.products.delete_one({"_id": ObjectId(product_id)})
+    if result.deleted_count == 0:
+        # Abort with Not Found, but with simple JSON response.
+        response = jsonify({"status": "Not Found"})
+        response.status = 404
+        return response
+    return jsonify({"status": "OK"})
+
+
+@app.errorhandler(404)
+def error_not_found(error):
+    return render_template("error/not_found.html"), 404
+
+
+@app.errorhandler(bson.errors.InvalidId)
+def error_invalid_id(error):
+    return render_template("error/not_found.html"), 404
 
 
 # ================================
