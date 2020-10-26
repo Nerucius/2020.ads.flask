@@ -34,7 +34,23 @@ def product_detail(product_id):
 
 @app.route("/products/<product_id>/edit/", methods=["GET", "POST"])
 def product_edit(product_id):
-    return "Form to edit product #.".format(product_id)
+    # Find product or panic
+    product = mongo.db.products.find_one({"_id": ObjectId(product_id)})
+    if product is None:
+        abort(404)
+
+    # Form handling
+    form = ProductForm(request.form)
+    obj = form.name
+    print(obj)
+    print(dir(obj))
+    if request.method == "POST" and form.validate():
+        mongo.db.products.update_one({"_id": ObjectId(product_id)}, {"$set": form.data})
+        return redirect(url_for("products_list"))
+
+    return render_template(
+        "product/edit.html", title="Edit a Product", form=form, product=product
+    )
 
 
 @app.route("/products/create/", methods=["GET", "POST"])
@@ -46,7 +62,9 @@ def product_create():
         # Success. Send user back to full product list.
         return redirect(url_for("products_list"))
     # Either first load or validation error at this point.
-    return render_template("product/edit.html", form=form)
+    return render_template(
+        "product/edit.html", title="Create a new Product", form=form, product=dict()
+    )
 
 
 @app.route("/products/<product_id>/delete/", methods=["DELETE"])
@@ -98,11 +116,12 @@ request.files: {request.files}
 @app.before_request
 def callme_before_every_request():
     # Demo only: the before_request hook.
-    app.logger.debug(dump_request_detail(request))
+    # app.logger.debug(dump_request_detail(request))
+    pass
 
 
 @app.after_request
 def callme_after_every_response(response):
     # Demo only: the after_request hook.
-    app.logger.debug("# After Request #\n" + repr(response))
+    # app.logger.debug("# After Request #\n" + repr(response))
     return response
