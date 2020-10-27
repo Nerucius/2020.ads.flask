@@ -35,6 +35,7 @@ def product_detail(product_id):
 
 
 @app.route("/products/<product_id>/edit/", methods=["GET", "POST"])
+@login_required
 def product_edit(product_id):
     # Find product or panic
     product = mongo.db.products.find_one({"_id": ObjectId(product_id)})
@@ -53,6 +54,7 @@ def product_edit(product_id):
 
 
 @app.route("/products/create/", methods=["GET", "POST"])
+@login_required
 def product_create():
     """Provide HTML form to create a new product."""
     form = ProductForm(request.form)
@@ -67,6 +69,7 @@ def product_create():
 
 
 @app.route("/products/<product_id>/delete/", methods=["DELETE"])
+@login_required
 def product_delete(product_id):
     """Delete record using HTTP DELETE, respond with JSON."""
     result = mongo.db.products.delete_one({"_id": ObjectId(product_id)})
