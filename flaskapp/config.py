@@ -3,9 +3,20 @@ from datetime import datetime
 
 from flask import Flask
 from flask_pymongo import PyMongo
+from flask_login import LoginManager
 
 
+# Flask App instance
 app = Flask(__name__)
+
+# Flask-Login Config
+
+app.config["SECRET_KEY"] = env("SECRET_KEY")
+app.config["SESSION_PROTECTION"] = "strong"
+
+login_manager = LoginManager()
+login_manager.setup_app(app)
+login_manager.login_view = "login"
 
 # MONGODB Config
 
@@ -15,11 +26,11 @@ db_host = env("MONGO_HOST", "localhost")
 db_port = env("MONGO_PORT", 27017)
 db_name = env("MONGO_DBNAME", "flaskapp")
 
-app.config["MONGO_DBNAME"] = db_name
-app.config["MONGO_URI"] = f"mongodb://{db_user}:{db_pass}@{db_host}:{db_port}/{db_name}"
+MONGO_BASE_URI = f"mongodb://{db_user}:{db_pass}@{db_host}:{db_port}"
 
 # Important to point to the "admin" as authentication database
-mongo = PyMongo(app, authSource="admin")
+mongo = PyMongo(app, uri=f"{MONGO_BASE_URI}/{db_name}", authSource="admin")
+# users = PyMongo(app, uri=f"{MONGO_BASE_URI}/users", authSource="admin")
 
 stats = mongo.db.stats
 stats.insert_one(

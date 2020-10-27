@@ -2,10 +2,12 @@ import json, bson
 from bson.objectid import ObjectId
 
 from flask import request, url_for, abort, jsonify, redirect, render_template
-from bson.objectid import ObjectId
+from flask_login import current_user
+from flask_login import login_user, logout_user, login_required
 
-from flaskapp.config import app, mongo
-from flaskapp.forms import ProductForm
+from flaskapp.config import app, mongo, login_manager
+from flaskapp.forms import ProductForm, LoginForm
+from flaskapp.models import User
 
 
 @app.route("/")
@@ -41,9 +43,6 @@ def product_edit(product_id):
 
     # Form handling
     form = ProductForm(request.form)
-    obj = form.name
-    print(obj)
-    print(dir(obj))
     if request.method == "POST" and form.validate():
         mongo.db.products.update_one({"_id": ObjectId(product_id)}, {"$set": form.data})
         return redirect(url_for("products_list"))
@@ -79,6 +78,36 @@ def product_delete(product_id):
     return jsonify({"status": "OK"})
 
 
+@app.route("/login/", methods=["GET", "POST"])
+def login():
+    if current_user.is_authenticated:
+        return redirect(url_for("products_list"))
+    form = LoginForm(request.form)
+    error = None
+    if request.method == "POST" and form.validate():
+        username = form.username.data.lower().strip()
+        password = form.password.data.lower().strip()
+        user = mongo.db.users.find_one({"username": username})
+        if user and User.validate_login(user["password"], password):
+            user_obj = User(user["username"])
+            login_user(user_obj)
+            return redirect(url_for("products_list"))
+        else:
+            error = "Incorrect username or password."
+    return render_template("user/login.html", form=form, error=error)
+
+
+@app.route("/logout/")
+def logout():
+    logout_user()
+    return redirect(url_for("products_list"))
+
+
+# ================================
+# Error Handlers
+# ================================
+
+
 @app.errorhandler(404)
 def error_not_found(error):
     return render_template("error/not_found.html"), 404
@@ -87,6 +116,20 @@ def error_not_found(error):
 @app.errorhandler(bson.errors.InvalidId)
 def error_invalid_id(error):
     return render_template("error/not_found.html"), 404
+
+
+# ================================
+# LOGIN
+# ================================
+
+
+@login_manager.user_loader
+def load_user(user_id):
+    """Flask-Login hook to load a User instance from ID."""
+    u = mongo.db.users.find_one({"username": user_id})
+    if not u:
+        return None
+    return User(u["username"])
 
 
 # ================================

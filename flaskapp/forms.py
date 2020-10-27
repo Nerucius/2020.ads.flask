@@ -1,6 +1,16 @@
 from wtforms import Form
-from wtforms import TextAreaField, TextField, FloatField
+from wtforms import TextAreaField, TextField, FloatField, PasswordField
 from wtforms.validators import Length, NumberRange, required
+
+
+class LoginForm(Form):
+    """
+    Render HTML input for user login form.
+    Authentication (i.e. password verification) happens in the view function.
+    """
+
+    username = TextField("Username", [required()])
+    password = PasswordField("Password", [required()])
 
 
 class ProductForm(Form):
