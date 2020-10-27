@@ -28,9 +28,8 @@ db_name = env("MONGO_DBNAME", "flaskapp")
 
 MONGO_BASE_URI = f"mongodb://{db_user}:{db_pass}@{db_host}:{db_port}"
 
-# Important to point to the "admin" as authentication database
+# Important to point to "admin" as authentication database
 mongo = PyMongo(app, uri=f"{MONGO_BASE_URI}/{db_name}", authSource="admin")
-# users = PyMongo(app, uri=f"{MONGO_BASE_URI}/users", authSource="admin")
 
 stats = mongo.db.stats
 stats.insert_one(
