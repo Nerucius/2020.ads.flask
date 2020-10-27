@@ -1,1 +1,1 @@
-web: gunicorn --bind 0.0.0.0:443 flaskapp:wsgi
+web: gunicorn flaskapp.wsgi:app
